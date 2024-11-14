@@ -32,6 +32,8 @@ Index of this file:
 
 */
 
+#include <string>
+#include <regex>
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_WARNINGS)
 #define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -1838,7 +1840,8 @@ bool ImGui::BeginCombo(const char* label, const char* preview_value, ImGuiComboF
     const float preview_width = ((flags & ImGuiComboFlags_WidthFitPreview) && (preview_value != NULL)) ? CalcTextSize(preview_value, NULL, true).x : 0.0f;
     const float w = (flags & ImGuiComboFlags_NoPreview) ? arrow_size : ((flags & ImGuiComboFlags_WidthFitPreview) ? (arrow_size + preview_width + style.FramePadding.x * 2.0f) : CalcItemWidth());
     const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + ImVec2(w, label_size.y + style.FramePadding.y * 2.0f));
-    const ImRect total_bb(bb.Min, bb.Max + ImVec2(label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f, 0.0f));
+    // const ImRect total_bb(bb.Min, bb.Max + ImVec2(label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f, 0.0f));
+    const ImRect total_bb(bb.Min, bb.Max); 
     ItemSize(total_bb, style.FramePadding.y);
     if (!ItemAdd(total_bb, id, &bb))
         return false;
@@ -1883,10 +1886,14 @@ bool ImGui::BeginCombo(const char* label, const char* preview_value, ImGuiComboF
     {
         if (g.LogEnabled)
             LogSetNextTextDecoration("{", "}");
-        RenderTextClipped(bb.Min + style.FramePadding, ImVec2(value_x2, bb.Max.y), preview_value, NULL, NULL);
-    }
-    if (label_size.x > 0)
-        RenderText(ImVec2(bb.Max.x + style.ItemInnerSpacing.x, bb.Min.y + style.FramePadding.y), label);
+        std::string showString = std::string(label).substr(0, FindRenderedTextEnd(label) - label);
+        showString = !std::regex_match(std::string(showString), std::regex("^\\s*$")) ? showString + ": " + std::string(preview_value) : std::string(preview_value);
+        RenderTextClipped(bb.Min + style.FramePadding, ImVec2(value_x2, bb.Max.y), showString.c_str(), NULL, NULL);
+        
+
+        }
+    // if (label_size.x > 0)
+    //     RenderText(ImVec2(bb.Max.x + style.ItemInnerSpacing.x, bb.Min.y + style.FramePadding.y), label);
 
     if (!popup_open)
         return false;
@@ -2599,7 +2606,8 @@ bool ImGui::DragScalar(const char* label, ImGuiDataType data_type, void* p_data,
 
     const ImVec2 label_size = CalcTextSize(label, NULL, true);
     const ImRect frame_bb(window->DC.CursorPos, window->DC.CursorPos + ImVec2(w, label_size.y + style.FramePadding.y * 2.0f));
-    const ImRect total_bb(frame_bb.Min, frame_bb.Max + ImVec2(label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f, 0.0f));
+    // const ImRect total_bb(frame_bb.Min, frame_bb.Max + ImVec2(label_size.x > 0.0f ? style.ItemInnerSpacing.x + label_size.x : 0.0f, 0.0f));
+    const ImRect total_bb(frame_bb.Min, frame_bb.Max); 
 
     const bool temp_input_allowed = (flags & ImGuiSliderFlags_NoInput) == 0;
     ItemSize(total_bb, style.FramePadding.y);
@@ -2672,10 +2680,16 @@ bool ImGui::DragScalar(const char* label, ImGuiDataType data_type, void* p_data,
     const char* value_buf_end = value_buf + DataTypeFormatString(value_buf, IM_ARRAYSIZE(value_buf), data_type, p_data, format);
     if (g.LogEnabled)
         LogSetNextTextDecoration("{", "}");
-    RenderTextClipped(frame_bb.Min, frame_bb.Max, value_buf, value_buf_end, NULL, ImVec2(0.5f, 0.5f));
 
-    if (label_size.x > 0.0f)
-        RenderText(ImVec2(frame_bb.Max.x + style.ItemInnerSpacing.x, frame_bb.Min.y + style.FramePadding.y), label);
+    std::string showString = std::string(label).substr(0, FindRenderedTextEnd(label) - label);
+    showString = !std::regex_match(std::string(showString), std::regex("^\\s*$")) ? showString + ": " + std::string(value_buf) : std::string(value_buf);
+
+    // !std::regex_match(std::string(label), std::regex("^\\s*$")) ? ( std::string(label)+": "+std::string(preview_value)).c_str() : preview_value
+    
+    RenderTextClipped(frame_bb.Min, frame_bb.Max, showString.c_str(), value_buf_end, NULL, ImVec2(0.5f, 0.5f));
+
+    // if (label_size.x > 0.0f)
+    //     RenderText(ImVec2(frame_bb.Max.x + style.ItemInnerSpacing.x, frame_bb.Min.y + style.FramePadding.y), label);
 
     IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags | (temp_input_allowed ? ImGuiItemStatusFlags_Inputable : 0));
     return value_changed;
