@@ -2723,7 +2723,7 @@ bool ImGui::DragScalarN(const char* label, ImGuiDataType data_type, void* p_data
     if (label != label_end)
     {
         SameLine(0, g.Style.ItemInnerSpacing.x);
-        TextEx(label, label_end);
+        // TextEx(label, label_end);
     }
 
     EndGroup();
