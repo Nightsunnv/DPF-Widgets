@@ -1,5 +1,6 @@
 #include "imgui-knobs.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include "DearImGui/imgui.h"
@@ -140,10 +141,11 @@ namespace ImGuiKnobs {
         };
 
         template<typename DataType>
-        knob<DataType> knob_with_drag(const char *label, ImGuiDataType data_type, DataType *p_value, DataType v_min, DataType v_max, float _speed, const char *format, float size, ImGuiKnobFlags flags) {
+        knob<DataType> knob_with_drag(const char *label, ImGuiDataType data_type, DataType *p_value, DataType v_min, DataType v_max, float _speed, const char *format, float size, ImGuiKnobFlags flags, Image *image) {
             auto speed = _speed == 0 ? (v_max - v_min) / 250.f : _speed;
             ImGui::PushID(label);
-            auto width = size == 0 ? ImGui::GetTextLineHeight() * 4.0f : size * ImGui::GetIO().FontGlobalScale;
+            // auto width = size == 0 ? ImGui::GetTextLineHeight() * 4.0f : size * ImGui::GetIO().FontGlobalScale;
+            auto width = std::max(size == 0 ? ImGui::GetTextLineHeight() * 4.0f : size * ImGui::GetIO().FontGlobalScale, image->getWidth() * 0.7f);
             ImGui::PushItemWidth(width);
 
             ImGui::BeginGroup();
@@ -223,78 +225,84 @@ namespace ImGuiKnobs {
 
 
     template<typename DataType>
-    bool BaseKnob(const char *label, ImGuiDataType data_type, DataType *p_value, DataType v_min, DataType v_max, float speed, const char *format, ImGuiKnobVariant variant, float size, ImGuiKnobFlags flags, int steps = 10) {
-        auto knob = detail::knob_with_drag(label, data_type, p_value, v_min, v_max, speed, format, size, flags);
+    bool BaseKnob(const char *label, ImGuiDataType data_type, DataType *p_value, DataType v_min, DataType v_max, float speed, const char *format, ImGuiKnobVariant variant, float size, ImGuiKnobFlags flags,Image * image, int steps = 10) {
+        auto knob = detail::knob_with_drag(label, data_type, p_value, v_min, v_max, speed, format, size, flags, image);
 
-        switch (variant) {
-            case ImGuiKnobVariant_Tick: {
-                knob.draw_circle(0.85f, detail::GetSecondaryColorSet(), true, 32);
-                knob.draw_tick(0.5f, 0.85f, 0.08f, knob.angle, detail::GetPrimaryColorSet());
-                break;
-            }
-            case ImGuiKnobVariant_Dot: {
-                knob.draw_circle(0.85f, detail::GetSecondaryColorSet(), true, 32);
-                knob.draw_dot(0.12f, 0.6f, knob.angle, detail::GetPrimaryColorSet(), true, 12);
-                break;
-            }
+        knob.radius = image->getWidth()/2.0f;
 
-            case ImGuiKnobVariant_Wiper: {
-                knob.draw_circle(0.7f, detail::GetSecondaryColorSet(), true, 32);
-                knob.draw_arc(0.8f, 0.41f, knob.angle_min, knob.angle_max, detail::GetTrackColorSet(), 16, 2);
-
-                if (knob.t > 0.01f) {
-                    knob.draw_arc(0.8f, 0.43f, knob.angle_min, knob.angle, detail::GetPrimaryColorSet(), 16, 2);
+        if (image) {
+            image[static_cast<uint32_t>(knob.t*127)].drawAt(knob.center[0] - image->getWidth()/2.0f, knob.center[1] - image->getHeight()/2.0f);
+        } else {
+            switch (variant) {
+                case ImGuiKnobVariant_Tick: {
+                    knob.draw_circle(0.85f, detail::GetSecondaryColorSet(), true, 32);
+                    knob.draw_tick(0.5f, 0.85f, 0.08f, knob.angle, detail::GetPrimaryColorSet());
+                    break;
                 }
-                break;
-            }
-            case ImGuiKnobVariant_WiperOnly: {
-                knob.draw_arc(0.8f, 0.41f, knob.angle_min, knob.angle_max, detail::GetTrackColorSet(), 32, 2);
-
-                if (knob.t > 0.01) {
-                    knob.draw_arc(0.8f, 0.43f, knob.angle_min, knob.angle, detail::GetPrimaryColorSet(), 16, 2);
-                }
-                break;
-            }
-            case ImGuiKnobVariant_WiperDot: {
-                knob.draw_circle(0.6f, detail::GetSecondaryColorSet(), true, 32);
-                knob.draw_arc(0.85f, 0.41f, knob.angle_min, knob.angle_max, detail::GetTrackColorSet(), 16, 2);
-                knob.draw_dot(0.1f, 0.85f, knob.angle, detail::GetPrimaryColorSet(), true, 12);
-                break;
-            }
-            case ImGuiKnobVariant_Stepped: {
-                for (auto n = 0.f; n < steps; n++) {
-                    auto a = n / (steps - 1);
-                    auto angle = knob.angle_min + (knob.angle_max - knob.angle_min) * a;
-                    knob.draw_tick(0.7f, 0.9f, 0.04f, angle, detail::GetPrimaryColorSet());
+                case ImGuiKnobVariant_Dot: {
+                    knob.draw_circle(0.85f, detail::GetSecondaryColorSet(), true, 32);
+                    knob.draw_dot(0.12f, 0.6f, knob.angle, detail::GetPrimaryColorSet(), true, 12);
+                    break;
                 }
 
-                knob.draw_circle(0.6f, detail::GetSecondaryColorSet(), true, 32);
-                knob.draw_dot(0.12f, 0.4f, knob.angle, detail::GetPrimaryColorSet(), true, 12);
-                break;
-            }
-            case ImGuiKnobVariant_Space: {
-                knob.draw_circle(0.3f - knob.t * 0.1f, detail::GetSecondaryColorSet(), true, 16);
+                case ImGuiKnobVariant_Wiper: {
+                    knob.draw_circle(0.7f, detail::GetSecondaryColorSet(), true, 32);
+                    knob.draw_arc(0.8f, 0.41f, knob.angle_min, knob.angle_max, detail::GetTrackColorSet(), 16, 2);
 
-                if (knob.t > 0.01f) {
-                    knob.draw_arc(0.4f, 0.15f, knob.angle_min - 1.0f, knob.angle - 1.0f, detail::GetPrimaryColorSet(), 16, 2);
-                    knob.draw_arc(0.6f, 0.15f, knob.angle_min + 1.0f, knob.angle + 1.0f, detail::GetPrimaryColorSet(), 16, 2);
-                    knob.draw_arc(0.8f, 0.15f, knob.angle_min + 3.0f, knob.angle + 3.0f, detail::GetPrimaryColorSet(), 16, 2);
+                    if (knob.t > 0.01f) {
+                        knob.draw_arc(0.8f, 0.43f, knob.angle_min, knob.angle, detail::GetPrimaryColorSet(), 16, 2);
+                    }
+                    break;
                 }
-                break;
+                case ImGuiKnobVariant_WiperOnly: {
+                    knob.draw_arc(0.8f, 0.41f, knob.angle_min, knob.angle_max, detail::GetTrackColorSet(), 32, 2);
+
+                    if (knob.t > 0.01) {
+                        knob.draw_arc(0.8f, 0.43f, knob.angle_min, knob.angle, detail::GetPrimaryColorSet(), 16, 2);
+                    }
+                    break;
+                }
+                case ImGuiKnobVariant_WiperDot: {
+                    knob.draw_circle(0.6f, detail::GetSecondaryColorSet(), true, 32);
+                    knob.draw_arc(0.85f, 0.41f, knob.angle_min, knob.angle_max, detail::GetTrackColorSet(), 16, 2);
+                    knob.draw_dot(0.1f, 0.85f, knob.angle, detail::GetPrimaryColorSet(), true, 12);
+                    break;
+                }
+                case ImGuiKnobVariant_Stepped: {
+                    for (auto n = 0.f; n < steps; n++) {
+                        auto a = n / (steps - 1);
+                        auto angle = knob.angle_min + (knob.angle_max - knob.angle_min) * a;
+                        knob.draw_tick(0.7f, 0.9f, 0.04f, angle, detail::GetPrimaryColorSet());
+                    }
+
+                    knob.draw_circle(0.6f, detail::GetSecondaryColorSet(), true, 32);
+                    knob.draw_dot(0.12f, 0.4f, knob.angle, detail::GetPrimaryColorSet(), true, 12);
+                    break;
+                }
+                case ImGuiKnobVariant_Space: {
+                    knob.draw_circle(0.3f - knob.t * 0.1f, detail::GetSecondaryColorSet(), true, 16);
+
+                    if (knob.t > 0.01f) {
+                        knob.draw_arc(0.4f, 0.15f, knob.angle_min - 1.0f, knob.angle - 1.0f, detail::GetPrimaryColorSet(), 16, 2);
+                        knob.draw_arc(0.6f, 0.15f, knob.angle_min + 1.0f, knob.angle + 1.0f, detail::GetPrimaryColorSet(), 16, 2);
+                        knob.draw_arc(0.8f, 0.15f, knob.angle_min + 3.0f, knob.angle + 3.0f, detail::GetPrimaryColorSet(), 16, 2);
+                    }
+                    break;
+                }
             }
         }
 
         return knob.value_changed;
     }
 
-    bool Knob(const char *label, float *p_value, float v_min, float v_max, float speed, const char *format, ImGuiKnobVariant variant, float size, ImGuiKnobFlags flags, int steps) {
+    bool Knob(const char *label, float *p_value, float v_min, float v_max, float speed, const char *format, ImGuiKnobVariant variant, float size, ImGuiKnobFlags flags, Image* image, int steps) {
         const char *_format = format == NULL ? "%.3f" : format;
-        return BaseKnob(label, ImGuiDataType_Float, p_value, v_min, v_max, speed, _format, variant, size, flags, steps);
+        return BaseKnob(label, ImGuiDataType_Float, p_value, v_min, v_max, speed, _format, variant, size, flags, image, steps);
     }
 
-    bool KnobInt(const char *label, int *p_value, int v_min, int v_max, float speed, const char *format, ImGuiKnobVariant variant, float size, ImGuiKnobFlags flags, int steps) {
+    bool KnobInt(const char *label, int *p_value, int v_min, int v_max, float speed, const char *format, ImGuiKnobVariant variant, float size, ImGuiKnobFlags flags, Image* image, int steps) {
         const char *_format = format == NULL ? "%i" : format;
-        return BaseKnob(label, ImGuiDataType_S32, p_value, v_min, v_max, speed, _format, variant, size, flags, steps);
+        return BaseKnob(label, ImGuiDataType_S32, p_value, v_min, v_max, speed, _format, variant, size, flags, image, steps);
     }
 
 }// namespace ImGuiKnobs
