@@ -3651,7 +3651,7 @@ bool ImGui::TempInputScalar(const ImRect& bb, ImGuiID id, const char* label, ImG
         if (value_changed)
             MarkItemEdited(id);
     }
-    return value_changed;
+    return g.ActiveId != g.TempInputId;
 }
 
 void ImGui::SetNextItemRefVal(ImGuiDataType data_type, void* p_data)

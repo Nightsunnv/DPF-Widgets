@@ -143,6 +143,7 @@ namespace ImGuiKnobs {
         template<typename DataType>
         knob<DataType> knob_with_drag(const char *label, ImGuiDataType data_type, DataType *p_value, DataType v_min, DataType v_max, float _speed, const char *format, float size, ImGuiKnobFlags flags, Image *image) {
             auto speed = _speed == 0 ? (v_max - v_min) / 250.f : _speed;
+            *p_value = std::clamp(*p_value, v_min, v_max);
             ImGui::PushID(label);
             // auto width = size == 0 ? ImGui::GetTextLineHeight() * 4.0f : size * ImGui::GetIO().FontGlobalScale;
             auto width = std::max(size == 0 ? ImGui::GetTextLineHeight() * 4.0f : size * ImGui::GetIO().FontGlobalScale, image->getWidth() * 0.7f);
