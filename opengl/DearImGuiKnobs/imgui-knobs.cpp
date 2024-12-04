@@ -189,7 +189,7 @@ static std::map<std::string, float> prevValues;
                     k.value_changed = true;
                 }
                 if(k.value_changed) {
-                    prevValues[label] = *p_value;
+                    prevValues[label] = std::clamp(*p_value, v_min, v_max);
                 } else if(prevValues.find(label) != prevValues.end()) {
                     k.t = ((float)prevValues[label] - v_min) / (v_max - v_min);
                 }
@@ -240,7 +240,7 @@ static std::map<std::string, float> prevValues;
         knob.radius = image->getWidth()/2.0f;
 
         if (image) {
-            image[static_cast<uint32_t>(knob.t*127)].drawAt(knob.center[0] - image->getWidth()/2.0f, knob.center[1] - image->getHeight()/2.0f);
+            image[static_cast<uint32_t>(std::clamp(knob.t*127,0.f,127.f))].drawAt(knob.center[0] - image->getWidth()/2.0f, knob.center[1] - image->getHeight()/2.0f);
         } else {
             switch (variant) {
                 case ImGuiKnobVariant_Tick: {
