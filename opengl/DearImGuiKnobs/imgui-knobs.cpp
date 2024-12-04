@@ -1,5 +1,7 @@
 #include "imgui-knobs.h"
 
+#include <map>
+#include <string>
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -9,6 +11,7 @@
 #define IMGUIKNOBS_PI 3.14159265358979323846f
 
 namespace ImGuiKnobs {
+static std::map<std::string, float> prevValues;
     namespace detail {
         void draw_arc1(ImVec2 center, float radius, float start_angle, float end_angle, float thickness, ImColor color, int num_segments) {
             ImVec2 start = {
@@ -184,6 +187,11 @@ namespace ImGuiKnobs {
                 auto changed = ImGui::DragScalar("###knob_drag", data_type, p_value, speed, &v_min, &v_max, format, drag_flags);
                 if (changed) {
                     k.value_changed = true;
+                }
+                if(k.value_changed) {
+                    prevValues[label] = *p_value;
+                } else if(prevValues.find(label) != prevValues.end()) {
+                    k.t = ((float)prevValues[label] - v_min) / (v_max - v_min);
                 }
             }
 
