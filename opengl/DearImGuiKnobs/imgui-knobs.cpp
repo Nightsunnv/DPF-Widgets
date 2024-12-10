@@ -185,7 +185,7 @@ static std::map<std::string, float> prevValues;
                     drag_flags |= ImGuiSliderFlags_Vertical;
                 }
                 auto changed = ImGui::DragScalar("###knob_drag", data_type, p_value, speed, &v_min, &v_max, format, drag_flags);
-                if (changed) {
+                if (changed || *p_value != prevValues[label]) {
                     k.value_changed = true;
                 }
                 if(k.value_changed) {
