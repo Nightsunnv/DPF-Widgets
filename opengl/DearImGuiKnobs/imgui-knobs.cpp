@@ -149,7 +149,14 @@ static std::map<std::string, float> prevValues;
             *p_value = std::clamp(*p_value, v_min, v_max);
             ImGui::PushID(label);
             // auto width = size == 0 ? ImGui::GetTextLineHeight() * 4.0f : size * ImGui::GetIO().FontGlobalScale;
-            auto width = std::max(size == 0 ? ImGui::GetTextLineHeight() * 4.0f : size * ImGui::GetIO().FontGlobalScale, image->getWidth() * 0.7f);
+            float width ;
+            if (image)
+                width = std::max(size == 0 ? ImGui::GetTextLineHeight() * 4.0f : size * ImGui::GetIO().FontGlobalScale, image->getWidth() * 0.7f);
+            else
+                width = std::max(size == 0 ? ImGui::GetTextLineHeight() * 4.0f : size * ImGui::GetIO().FontGlobalScale, 0.0f);
+
+
+            // auto width = std::max(size == 0 ? ImGui::GetTextLineHeight() * 4.0f : size * ImGui::GetIO().FontGlobalScale, image != NULL ? image->getWidth() * 0.7f : 0);
             ImGui::PushItemWidth(width);
 
             ImGui::BeginGroup();
@@ -171,6 +178,7 @@ static std::map<std::string, float> prevValues;
             // Draw knob
             knob<DataType> k(label, data_type, p_value, v_min, v_max, speed, width * 0.5f, format, flags);
 
+            k.radius = width * 0.5f;
             // Draw tooltip
             if (flags & ImGuiKnobFlags_ValueTooltip && (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) || ImGui::IsItemActive())) {
                 ImGui::BeginTooltip();
@@ -237,7 +245,7 @@ static std::map<std::string, float> prevValues;
     bool BaseKnob(const char *label, ImGuiDataType data_type, DataType *p_value, DataType v_min, DataType v_max, float speed, const char *format, ImGuiKnobVariant variant, float size, ImGuiKnobFlags flags,Image * image, int steps = 10) {
         auto knob = detail::knob_with_drag(label, data_type, p_value, v_min, v_max, speed, format, size, flags, image);
 
-        knob.radius = image->getWidth()/2.0f;
+        // knob.radius = image->getWidth()/2.0f;
 
         if (image) {
             image[static_cast<uint32_t>(std::clamp(knob.t*127,0.f,127.f))].drawAt(knob.center[0] - image->getWidth()/2.0f, knob.center[1] - image->getHeight()/2.0f);
