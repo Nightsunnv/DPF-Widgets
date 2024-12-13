@@ -12,6 +12,7 @@
 
 namespace ImGuiKnobs {
 static std::map<std::string, float> prevValues;
+static std::map<std::string, uint32_t> setDefaultFlags;
     namespace detail {
         void draw_arc1(ImVec2 center, float radius, float start_angle, float end_angle, float thickness, ImColor color, int num_segments) {
             ImVec2 start = {
@@ -83,6 +84,11 @@ static std::map<std::string, float> prevValues;
                     drag_flags |= ImGuiSliderFlags_Vertical;
                 }
                 value_changed = ImGui::DragBehavior(gid, data_type, p_value, speed, &v_min, &v_max, format, drag_flags);
+
+                if (ImGui::IsItemHovered(0) && ImGui::IsMouseDoubleClicked(1)) {
+                    value_changed = true;
+                    setDefaultFlags[_label] = 2;
+                }
 
                 angle_min = IMGUIKNOBS_PI * 0.75f;
                 angle_max = IMGUIKNOBS_PI * 2.25f;
@@ -184,13 +190,12 @@ static std::map<std::string, float> prevValues;
                 if (!(flags & ImGuiKnobFlags_DragHorizontal)) {
                     drag_flags |= ImGuiSliderFlags_Vertical;
                 }
-                auto changed = ImGui::DragScalar("###knob_drag", data_type, p_value, speed, &v_min, &v_max, format, drag_flags);
-                if (changed || *p_value != prevValues[label]) {
+                if (ImGui::DragScalar("###knob_drag", data_type, p_value, speed, &v_min, &v_max, format, drag_flags) || k.value_changed || !setDefaultFlags[label]) {
+                    prevValues[label] = std::clamp(*p_value, v_min, v_max);
                     k.value_changed = true;
                 }
-                if(k.value_changed) {
-                    prevValues[label] = std::clamp(*p_value, v_min, v_max);
-                } else if(prevValues.find(label) != prevValues.end()) {
+                setDefaultFlags[label]--;
+                if(prevValues.find(label) != prevValues.end()) {
                     k.t = ((float)prevValues[label] - v_min) / (v_max - v_min);
                 }
             }
