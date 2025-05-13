@@ -73,7 +73,10 @@ static std::map<std::string, uint32_t> setDefaultFlags;
 
             knob(const char *_label, ImGuiDataType data_type, DataType *p_value, DataType v_min, DataType v_max, float speed, float _radius, const char *format, ImGuiKnobFlags flags) {
                 radius = _radius;
-                t = ((float) *p_value - v_min) / (v_max - v_min);
+                if (flags & ImGuiKnobFlags_Logarithmic) {
+                    t = (log10f((float) *p_value / v_min)) / (log10f((float)v_max / v_min));
+                } else
+                    t = ((float) *p_value - v_min) / (v_max - v_min);
                 auto screen_pos = ImGui::GetCursorScreenPos();
 
                 // Handle dragging
@@ -82,6 +85,9 @@ static std::map<std::string, uint32_t> setDefaultFlags;
                 ImGuiSliderFlags drag_flags = 0;
                 if (!(flags & ImGuiKnobFlags_DragHorizontal)) {
                     drag_flags |= ImGuiSliderFlags_Vertical;
+                }
+                if(flags & ImGuiKnobFlags_Logarithmic) {
+                    drag_flags |= ImGuiSliderFlags_Logarithmic;
                 }
                 value_changed = ImGui::DragBehavior(gid, data_type, p_value, speed, &v_min, &v_max, format, drag_flags);
 
@@ -198,13 +204,19 @@ static std::map<std::string, uint32_t> setDefaultFlags;
                 if (!(flags & ImGuiKnobFlags_DragHorizontal)) {
                     drag_flags |= ImGuiSliderFlags_Vertical;
                 }
+                if(flags & ImGuiKnobFlags_Logarithmic) {
+                    drag_flags |= ImGuiSliderFlags_Logarithmic;
+                }
                 if (ImGui::DragScalar("###knob_drag", data_type, p_value, speed, &v_min, &v_max, format, drag_flags) || k.value_changed || !setDefaultFlags[label]) {
                     prevValues[label] = std::clamp(*p_value, v_min, v_max);
                     k.value_changed = true;
                 }
                 setDefaultFlags[label]--;
-                if(prevValues.find(label) != prevValues.end()) {
-                    k.t = ((float)prevValues[label] - v_min) / (v_max - v_min);
+                if (prevValues.find(label) != prevValues.end()) {
+                    if (flags & ImGuiKnobFlags_Logarithmic) {
+                            k.t = (log10f((float)prevValues[label] / v_min)) / (log10f((float)v_max / v_min));
+                    } else
+                        k.t = ((float)prevValues[label] - v_min) / (v_max - v_min);
                 }
             }
 
