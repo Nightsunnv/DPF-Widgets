@@ -45,8 +45,6 @@
 
 # if defined(DGL_USE_GLES2) || defined(DGL_USE_GLES3) || defined(DGL_USE_OPENGL3)
 #include "DearImGui/imgui_impl_opengl3.cpp"
-#if defined(__APPLE__)
-#  include "DearImGui/imgui_impl_metal.h"
 # else
 #  include "DearImGui/imgui_impl_opengl2.cpp"
 # endif
