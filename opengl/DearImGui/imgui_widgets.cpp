@@ -5335,8 +5335,8 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
         LogRenderedText(&draw_pos, buf_display, buf_display_end);
     }
 
-    if (label_size.x > 0)
-        RenderText(ImVec2(frame_bb.Max.x + style.ItemInnerSpacing.x, frame_bb.Min.y + style.FramePadding.y), label);
+    // if (label_size.x > 0)
+    //     RenderText(ImVec2(frame_bb.Max.x + style.ItemInnerSpacing.x, frame_bb.Min.y + style.FramePadding.y), label);
 
     if (value_changed)
         MarkItemEdited(id);
